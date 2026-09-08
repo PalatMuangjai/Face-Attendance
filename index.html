@@ -1,12 +1,16 @@
+
 <!DOCTYPE html>
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ระบบเช็คชื่อด้วยใบหน้า | Face Attendance</title>
+  <title>ระบบเช็คชื่อด้วยใบหน้า | Face Attendance (Firebase)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
     body { font-family: 'Sarabun', sans-serif; padding-bottom: 80px; }
@@ -21,9 +25,7 @@
     .status-error { color: #ef4444; }
     .bottom-nav {
       position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
+      bottom: 0; left: 0; right: 0;
       background: #1e3a8a;
       box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
       z-index: 50;
@@ -41,7 +43,7 @@
       padding: 6px 8px;
       border-radius: 10px;
       transition: all 0.2s;
-      min-width: 60px;
+      min-width: 56px;
     }
     .bottom-nav button.active,
     .bottom-nav button:hover {
@@ -60,65 +62,45 @@
         <span class="text-2xl">🎓</span>
         <div>
           <div class="font-bold text-lg leading-tight">ระบบเช็คชื่อด้วยใบหน้า</div>
-          <div class="text-blue-200 text-xs">โรงเรียนตัวอย่าง</div>
+          <div class="text-blue-200 text-xs">เชื่อมข้อมูลทุกเครื่อง · Firebase</div>
         </div>
       </div>
       <div class="flex flex-wrap gap-2 text-sm">
-        <button onclick="showPage('home')" class="nav-btn px-3 py-1.5 rounded-lg hover:bg-blue-800 transition">หน้าหลัก</button>
-        <button onclick="showPage('register')" class="nav-btn px-3 py-1.5 rounded-lg hover:bg-blue-800 transition">ลงทะเบียน</button>
-        <button onclick="startScanMode('in')" class="nav-btn px-3 py-1.5 rounded-lg hover:bg-blue-800 transition">สแกนเข้า</button>
-        <button onclick="startScanMode('out')" class="nav-btn px-3 py-1.5 rounded-lg hover:bg-blue-800 transition">สแกนออก</button>
-        <button onclick="showPage('history')" class="nav-btn px-3 py-1.5 rounded-lg hover:bg-blue-800 transition">ประวัติ</button>
-        <button onclick="showPage('dashboard')" class="nav-btn px-3 py-1.5 rounded-lg hover:bg-blue-800 transition">สรุป</button>
+        <button onclick="showPage('home')" class="px-3 py-1.5 rounded-lg hover:bg-blue-800">หน้าหลัก</button>
+        <button onclick="showPage('register')" class="px-3 py-1.5 rounded-lg hover:bg-blue-800">ลงทะเบียน</button>
+        <button onclick="startScanMode('in')" class="px-3 py-1.5 rounded-lg hover:bg-blue-800">สแกนเข้า</button>
+        <button onclick="startScanMode('out')" class="px-3 py-1.5 rounded-lg hover:bg-blue-800">สแกนออก</button>
+        <button onclick="showPage('history')" class="px-3 py-1.5 rounded-lg hover:bg-blue-800">ประวัติ</button>
+        <button onclick="showPage('dashboard')" class="px-3 py-1.5 rounded-lg hover:bg-blue-800">สรุป</button>
       </div>
     </div>
   </nav>
 
   <main class="max-w-6xl mx-auto px-4 py-6">
+    <div id="fbBanner" class="mb-4 hidden bg-amber-50 border border-amber-200 text-amber-900 text-sm rounded-xl px-4 py-3">
+      ⚠️ ยังไม่ได้ตั้งค่า Firebase — ใส่ config ในไฟล์ index.html ก่อนใช้งานร่วมกันหลายเครื่อง
+    </div>
 
-    <!-- ========== HOME ========== -->
+    <!-- HOME -->
     <section id="home" class="page active">
       <div class="bg-white rounded-2xl shadow-md p-8 text-center">
         <div class="text-6xl mb-4">📷</div>
         <h1 class="text-3xl font-bold text-blue-900 mb-2">ยินดีต้อนรับ</h1>
-        <p class="text-slate-600 mb-8">ระบบเช็คชื่อเข้า–ออก ด้วยการสแกนใบหน้า</p>
+        <p class="text-slate-600 mb-2">ระบบเช็คชื่อเข้า–ออก ด้วยใบหน้า</p>
+        <p class="text-sm text-emerald-700 mb-8">ข้อมูลเชื่อมทุกเครื่องผ่าน Firebase</p>
         <div class="flex flex-wrap justify-center gap-4 mb-6">
-          <button onclick="startScanMode('in')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 rounded-xl font-semibold shadow text-lg min-w-[160px]">
-            📥 สแกนเข้า
-          </button>
-          <button onclick="startScanMode('out')" class="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-xl font-semibold shadow text-lg min-w-[160px]">
-            📤 สแกนออก
-          </button>
+          <button onclick="startScanMode('in')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 rounded-xl font-semibold shadow text-lg min-w-[160px]">📥 สแกนเข้า</button>
+          <button onclick="startScanMode('out')" class="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-xl font-semibold shadow text-lg min-w-[160px]">📤 สแกนออก</button>
         </div>
         <div class="flex flex-wrap justify-center gap-3">
-          <button onclick="showPage('register')" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-medium shadow text-sm">
-            ลงทะเบียนนักเรียน
-          </button>
-          <button onclick="showPage('history')" class="bg-slate-700 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl font-medium shadow text-sm">
-            ดูประวัติ
-          </button>
-          <button onclick="showPage('dashboard')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-medium shadow text-sm">
-            สรุป
-          </button>
-        </div>
-        <div class="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-4 text-left">
-          <div class="bg-emerald-50 rounded-xl p-4">
-            <div class="font-semibold text-emerald-900">สแกนเข้า</div>
-            <div class="text-sm text-slate-600 mt-1">บันทึกเวลาเข้าเรียน / เข้าอาคาร</div>
-          </div>
-          <div class="bg-orange-50 rounded-xl p-4">
-            <div class="font-semibold text-orange-900">สแกนออก</div>
-            <div class="text-sm text-slate-600 mt-1">บันทึกเวลาออก / กลับบ้าน</div>
-          </div>
-          <div class="bg-blue-50 rounded-xl p-4">
-            <div class="font-semibold text-blue-900">หลังสแกน</div>
-            <div class="text-sm text-slate-600 mt-1">แสดงข้อมูลครบ + กรอกหมายเหตุได้</div>
-          </div>
+          <button onclick="showPage('register')" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm">ลงทะเบียน</button>
+          <button onclick="showPage('history')" class="bg-slate-700 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl text-sm">ประวัติ</button>
+          <button onclick="showPage('dashboard')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm">สรุป</button>
         </div>
       </div>
     </section>
 
-    <!-- ========== REGISTER ========== -->
+    <!-- REGISTER -->
     <section id="register" class="page">
       <div class="bg-white rounded-2xl shadow-md p-6">
         <h2 class="text-2xl font-bold text-blue-900 mb-4">ลงทะเบียนนักเรียนใหม่</h2>
@@ -126,15 +108,15 @@
           <div class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-slate-700 mb-1">ชื่อ-นามสกุล *</label>
-              <input id="regName" type="text" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="เช่น สมชาย ใจดี">
+              <input id="regName" type="text" class="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500" placeholder="เช่น สมชาย ใจดี">
             </div>
             <div>
               <label class="block text-sm font-medium text-slate-700 mb-1">รหัสนักเรียน</label>
-              <input id="regId" type="text" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="เช่น 65001">
+              <input id="regId" type="text" class="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500" placeholder="เช่น 65001">
             </div>
             <div>
               <label class="block text-sm font-medium text-slate-700 mb-1">ห้อง</label>
-              <select id="regClass" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+              <select id="regClass" class="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="ห้อง 1">ห้อง 1</option>
                 <option value="ห้อง 2">ห้อง 2</option>
                 <option value="ห้อง 3">ห้อง 3</option>
@@ -160,38 +142,34 @@
               <button onclick="captureFace()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm">ถ่ายและบันทึก</button>
               <button onclick="stopRegisterCamera()" class="bg-slate-500 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm">ปิดกล้อง</button>
             </div>
-
-            <!-- อัปโหลดรูปภาพ -->
             <div class="border-t border-slate-200 pt-4 mt-2">
               <label class="block text-sm font-medium text-slate-700 mb-2">หรือ อัปโหลดรูปภาพใบหน้า</label>
-              <input type="file" id="imageUpload" accept="image/*" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+              <input type="file" id="imageUpload" accept="image/*" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-700" />
               <button onclick="registerFromImage()" class="mt-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm">บันทึกจากรูปภาพ</button>
             </div>
-
-            <p id="regStatus" class="text-sm text-slate-500">กรอกข้อมูล แล้วเลือกถ่ายจากกล้อง หรืออัปโหลดรูปภาพ</p>
+            <p class="text-xs text-slate-500">เมื่อบันทึกสำเร็จ รูปจะดาวน์โหลดลงเครื่องด้วย (เอาไปเก็บเองได้)</p>
+            <p id="regStatus" class="text-sm text-slate-500">กรอกข้อมูล แล้วถ่ายหรืออัปโหลดรูป</p>
           </div>
           <div class="flex flex-col items-center gap-3">
             <video id="registerVideo" width="320" height="240" autoplay muted playsinline class="w-full max-w-sm"></video>
             <canvas id="registerCanvas" width="320" height="240" class="hidden"></canvas>
-            <img id="previewImage" class="hidden w-full max-w-sm rounded-xl border border-slate-200" alt="ตัวอย่างรูปที่อัปโหลด" />
+            <img id="previewImage" class="hidden w-full max-w-sm rounded-xl border border-slate-200" alt="preview" />
           </div>
         </div>
         <div class="mt-8">
-          <h3 class="font-semibold text-slate-800 mb-2">รายชื่อที่ลงทะเบียนแล้ว</h3>
+          <h3 class="font-semibold text-slate-800 mb-2">รายชื่อในระบบ (ทุกเครื่องเห็นเหมือนกัน)</h3>
           <div id="studentList" class="text-sm text-slate-600 space-y-1 max-h-48 overflow-y-auto"></div>
         </div>
       </div>
     </section>
 
-    <!-- ========== ATTENDANCE ========== -->
+    <!-- ATTENDANCE -->
     <section id="attendance" class="page">
       <div class="bg-white rounded-2xl shadow-md p-6">
         <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
           <h2 class="text-2xl font-bold text-blue-900" id="scanTitle">สแกนเข้า</h2>
           <div class="text-sm text-slate-500" id="todayDate"></div>
         </div>
-
-        <!-- กล้องสแกน -->
         <div id="scanPanel" class="grid md:grid-cols-2 gap-6">
           <div class="flex flex-col items-center">
             <video id="video" width="480" height="360" autoplay muted playsinline class="w-full max-w-lg"></video>
@@ -209,25 +187,23 @@
             </div>
           </div>
         </div>
-
-        <!-- หลังสแกนเจอใบหน้า: แสดงข้อมูล + หมายเหตุ -->
         <div id="resultPanel" class="hidden max-w-lg mx-auto">
           <div class="bg-slate-50 border border-slate-200 rounded-2xl p-6 space-y-4">
             <div class="text-center">
-              <div class="text-4xl mb-2" id="resultIcon">✅</div>
+              <div class="text-4xl mb-2" id="resultIcon">📤</div>
               <h3 class="text-xl font-bold text-blue-900" id="resultTitle">พบใบหน้า</h3>
               <p class="text-sm text-slate-500" id="resultTypeLabel"></p>
             </div>
             <div class="bg-white rounded-xl p-4 space-y-2 text-sm">
-              <div class="flex justify-between"><span class="text-slate-500">ชื่อ-นามสกุล</span><span class="font-semibold" id="resultName">-</span></div>
-              <div class="flex justify-between"><span class="text-slate-500">รหัสนักเรียน</span><span class="font-medium" id="resultId">-</span></div>
-              <div class="flex justify-between"><span class="text-slate-500">ห้อง</span><span class="font-medium" id="resultRoom">-</span></div>
-              <div class="flex justify-between"><span class="text-slate-500">วันที่</span><span class="font-medium" id="resultDate">-</span></div>
-              <div class="flex justify-between"><span class="text-slate-500">เวลา</span><span class="font-medium" id="resultTime">-</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">ชื่อ</span><span class="font-semibold" id="resultName">-</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">รหัส</span><span id="resultId">-</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">ห้อง</span><span id="resultRoom">-</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">วันที่</span><span id="resultDate">-</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">เวลา</span><span id="resultTime">-</span></div>
             </div>
             <div>
               <label class="block text-sm font-medium text-slate-700 mb-1">หมายเหตุ</label>
-              <input id="resultNote" type="text" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="เช่น สาย, ลากิจ, กลับก่อนเวลา">
+              <input id="resultNote" type="text" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500" placeholder="เช่น กลับก่อนเวลา">
             </div>
             <div class="flex gap-3">
               <button onclick="confirmScan()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-lg font-medium">บันทึก</button>
@@ -238,45 +214,42 @@
       </div>
     </section>
 
-    <!-- ========== HISTORY ========== -->
+    <!-- HISTORY -->
     <section id="history" class="page">
       <div class="bg-white rounded-2xl shadow-md p-6">
         <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
           <h2 class="text-2xl font-bold text-blue-900">ประวัติการเช็คชื่อ</h2>
-          <button onclick="downloadExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
-            ดาวน์โหลด Excel
-          </button>
+          <button onclick="downloadExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium">ดาวน์โหลด Excel</button>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-sm text-left">
             <thead class="bg-blue-900 text-white">
               <tr>
-                <th class="px-4 py-2 rounded-tl-lg">ชื่อ</th>
-                <th class="px-4 py-2">รหัส</th>
-                <th class="px-4 py-2">ห้อง</th>
-                <th class="px-4 py-2">ประเภท</th>
-                <th class="px-4 py-2">วันที่</th>
-                <th class="px-4 py-2">เวลา</th>
-                <th class="px-4 py-2">หมายเหตุ</th>
-                <th class="px-4 py-2 rounded-tr-lg text-center">จัดการ</th>
+                <th class="px-3 py-2 rounded-tl-lg">ชื่อ</th>
+                <th class="px-3 py-2">รหัส</th>
+                <th class="px-3 py-2">ห้อง</th>
+                <th class="px-3 py-2">ประเภท</th>
+                <th class="px-3 py-2">วันที่</th>
+                <th class="px-3 py-2">เวลา</th>
+                <th class="px-3 py-2">หมายเหตุ</th>
+                <th class="px-3 py-2 rounded-tr-lg text-center">จัดการ</th>
               </tr>
             </thead>
-            <tbody id="historyTable" class="divide-y divide-slate-200">
-            </tbody>
+            <tbody id="historyTable" class="divide-y divide-slate-200"></tbody>
           </table>
         </div>
-        <p id="historyEmpty" class="text-slate-400 text-sm mt-4 text-center">ยังไม่มีข้อมูลการเช็คชื่อ</p>
+        <p id="historyEmpty" class="text-slate-400 text-sm mt-4 text-center">ยังไม่มีข้อมูล</p>
       </div>
     </section>
 
-    <!-- ========== DASHBOARD ========== -->
+    <!-- DASHBOARD -->
     <section id="dashboard" class="page">
       <div class="bg-white rounded-2xl shadow-md p-6">
         <h2 class="text-2xl font-bold text-blue-900 mb-6">สรุปวันนี้</h2>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           <div class="bg-emerald-50 rounded-xl p-5 text-center">
             <div class="text-3xl font-bold text-emerald-700" id="statPresent">0</div>
-            <div class="text-sm text-emerald-800 mt-1">มาเรียนแล้ว</div>
+            <div class="text-sm text-emerald-800 mt-1">สแกนเข้าแล้ว</div>
           </div>
           <div class="bg-blue-50 rounded-xl p-5 text-center">
             <div class="text-3xl font-bold text-blue-700" id="statTotal">0</div>
@@ -284,108 +257,140 @@
           </div>
           <div class="bg-amber-50 rounded-xl p-5 text-center">
             <div class="text-3xl font-bold text-amber-700" id="statAbsent">0</div>
-            <div class="text-sm text-amber-800 mt-1">ยังไม่มา</div>
+            <div class="text-sm text-amber-800 mt-1">ยังไม่เข้า</div>
           </div>
         </div>
-
         <h3 class="text-lg font-semibold text-slate-800 mb-3">สรุปแยกตามห้อง</h3>
-        <div id="roomSummary" class="space-y-4">
-          <p class="text-slate-400 text-sm">ยังไม่มีข้อมูล</p>
-        </div>
-
-        <button onclick="showPage('history')" class="mt-6 text-blue-600 hover:underline text-sm">ดูประวัติทั้งหมด →</button>
+        <div id="roomSummary" class="space-y-4"><p class="text-slate-400 text-sm">ยังไม่มีข้อมูล</p></div>
       </div>
     </section>
-
   </main>
 
-  <!-- Bottom Navigation (เมนูด้านล่าง) -->
   <nav class="bottom-nav">
-    <button id="nav-home" onclick="showPage('home')" class="active">
-      <span class="icon">🏠</span>
-      <span>หน้าหลัก</span>
-    </button>
-    <button id="nav-register" onclick="showPage('register')">
-      <span class="icon">📝</span>
-      <span>ลงทะเบียน</span>
-    </button>
-    <button id="nav-attendance" onclick="startScanMode('in')">
-      <span class="icon">📥</span>
-      <span>เข้า</span>
-    </button>
-    <button id="nav-out" onclick="startScanMode('out')">
-      <span class="icon">📤</span>
-      <span>ออก</span>
-    </button>
-    <button id="nav-history" onclick="showPage('history')">
-      <span class="icon">📋</span>
-      <span>ประวัติ</span>
-    </button>
+    <button id="nav-home" onclick="showPage('home')" class="active"><span class="icon">🏠</span><span>หลัก</span></button>
+    <button id="nav-register" onclick="showPage('register')"><span class="icon">📝</span><span>ลงทะเบียน</span></button>
+    <button id="nav-attendance" onclick="startScanMode('in')"><span class="icon">📥</span><span>เข้า</span></button>
+    <button id="nav-out" onclick="startScanMode('out')"><span class="icon">📤</span><span>ออก</span></button>
+    <button id="nav-history" onclick="showPage('history')"><span class="icon">📋</span><span>ประวัติ</span></button>
   </nav>
 
   <footer class="text-center text-slate-400 text-xs py-6 mb-16">
-    ระบบเช็คชื่อด้วยใบหน้า · ทำงานบนเบราว์เซอร์ · ข้อมูลเก็บในเครื่องคุณ
+    Face Attendance · Firebase · ข้อมูลร่วมทุกเครื่อง
   </footer>
 
   <script>
-    // ========== Data ==========
-    let students = JSON.parse(localStorage.getItem('fa_students') || '[]');
-    let attendance = JSON.parse(localStorage.getItem('fa_attendance') || '[]');
+    // ============================================================
+    // ใส่ค่าจาก Firebase Console ตรงนี้
+    // Project settings → Your apps → Web app → Config
+    // ============================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyAQVfWETDM7-7sqPTkyiTwir5KAsrahgn4",
+      authDomain: "face-attendance-17dfb.firebaseapp.com",
+      projectId: "face-attendance-17dfb",
+      storageBucket: "face-attendance-17dfb.firebasestorage.app",
+      messagingSenderId: "454151556032",
+      appId: "1:454151556032:web:2115f779b6271937b11625",
+      measurementId: "G-M0QMG018MM"
+    };
+
+    let db = null;
+    let firebaseReady = false;
+    let students = [];   // { docId, name, id, class, descriptor }
+    let attendance = []; // { docId, name, id, class, date, time, type, note }
+
     let modelsLoaded = false;
     let attStream = null;
     let regStream = null;
     let detectionInterval = null;
-    let scanMode = 'in'; // 'in' | 'out'
-    let pendingStudent = null; // รอผู้ใช้กรอกหมายเหตุแล้วกดบันทึก
+    let scanMode = 'in';
+    let pendingStudent = null;
     let isWaitingConfirm = false;
-    const MATCH_THRESHOLD = 0.45; // ยิ่งน้อยยิ่งเข้มงวด
+    const MATCH_THRESHOLD = 0.45;
 
-    function startScanMode(mode) {
-      scanMode = mode === 'out' ? 'out' : 'in';
-      isWaitingConfirm = false;
-      pendingStudent = null;
-      const title = document.getElementById('scanTitle');
-      if (title) title.textContent = scanMode === 'in' ? '📥 สแกนเข้า' : '📤 สแกนออก';
-      document.getElementById('scanPanel').classList.remove('hidden');
-      document.getElementById('resultPanel').classList.add('hidden');
-      showPage('attendance');
-      // ไฮไลต์เมนูล่าง
-      document.querySelectorAll('.bottom-nav button').forEach(btn => btn.classList.remove('active'));
-      const navId = scanMode === 'in' ? 'nav-attendance' : 'nav-out';
-      const navBtn = document.getElementById(navId);
-      if (navBtn) navBtn.classList.add('active');
+    // ---------- Firebase init ----------
+    function initFirebase() {
+      const placeholder = !firebaseConfig.apiKey || firebaseConfig.apiKey.indexOf('YOUR_') === 0;
+      if (placeholder) {
+        document.getElementById('fbBanner').classList.remove('hidden');
+        return false;
+      }
+      try {
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore();
+        firebaseReady = true;
+        listenStudents();
+        listenAttendance();
+        return true;
+      } catch (e) {
+        console.error(e);
+        document.getElementById('fbBanner').classList.remove('hidden');
+        document.getElementById('fbBanner').textContent = 'Firebase เริ่มต้นไม่สำเร็จ: ' + e.message;
+        return false;
+      }
     }
 
-    // ========== Helpers ==========
-    function saveStudents() {
-      localStorage.setItem('fa_students', JSON.stringify(students));
-      renderStudentList();
-      updateDashboard();
+    function listenStudents() {
+      db.collection('students').orderBy('name').onSnapshot(snap => {
+        students = snap.docs.map(d => ({ docId: d.id, ...d.data() }));
+        renderStudentList();
+        updateDashboard();
+      }, err => console.error('students listen', err));
     }
-    function saveAttendance() {
-      localStorage.setItem('fa_attendance', JSON.stringify(attendance));
-      renderTodayList();
-      renderHistory();
-      updateDashboard();
+
+    function listenAttendance() {
+      db.collection('attendance').orderBy('date', 'desc').onSnapshot(snap => {
+        attendance = snap.docs.map(d => ({ docId: d.id, ...d.data() }));
+        // sort by date+time roughly
+        attendance.sort((a, b) => {
+          const ka = (a.date || '') + (a.time || '');
+          const kb = (b.date || '') + (b.time || '');
+          return kb.localeCompare(ka);
+        });
+        renderTodayList();
+        renderHistory();
+        updateDashboard();
+      }, err => console.error('attendance listen', err));
     }
+
+    // ---------- helpers ----------
     function todayStr() {
-      const d = new Date();
-      return d.toISOString().slice(0, 10);
+      return new Date().toISOString().slice(0, 10);
     }
     function timeStr() {
       return new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     }
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+    function canvasToBlob(canvas) {
+      return new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.92));
+    }
+    function requireFirebase() {
+      if (!firebaseReady) {
+        alert('กรุณาใส่ Firebase config ในไฟล์ index.html ก่อน');
+        return false;
+      }
+      return true;
+    }
+
     function showPage(id) {
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       document.getElementById(id).classList.add('active');
-
-      // อัปเดตเมนูด้านล่าง (ยกเว้นตอนสแกนเข้า/ออก ที่จัดการใน startScanMode)
       if (id !== 'attendance') {
         document.querySelectorAll('.bottom-nav button').forEach(btn => btn.classList.remove('active'));
         const navBtn = document.getElementById('nav-' + id);
         if (navBtn) navBtn.classList.add('active');
+        stopAttendance();
+        isWaitingConfirm = false;
+        pendingStudent = null;
       }
-
       if (id === 'register') renderStudentList();
       if (id === 'attendance') {
         document.getElementById('todayDate').textContent = 'วันที่ ' + new Date().toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -393,15 +398,24 @@
       }
       if (id === 'history') renderHistory();
       if (id === 'dashboard') updateDashboard();
-      if (id !== 'attendance') {
-        stopAttendance();
-        isWaitingConfirm = false;
-        pendingStudent = null;
-      }
       if (id !== 'register') stopRegisterCamera();
     }
 
-    // ========== Load models ==========
+    function startScanMode(mode) {
+      scanMode = mode === 'out' ? 'out' : 'in';
+      isWaitingConfirm = false;
+      pendingStudent = null;
+      document.getElementById('scanTitle').textContent = scanMode === 'in' ? '📥 สแกนเข้า' : '📤 สแกนออก';
+      document.getElementById('scanPanel').classList.remove('hidden');
+      document.getElementById('resultPanel').classList.add('hidden');
+      showPage('attendance');
+      document.querySelectorAll('.bottom-nav button').forEach(btn => btn.classList.remove('active'));
+      const navId = scanMode === 'in' ? 'nav-attendance' : 'nav-out';
+      const navBtn = document.getElementById(navId);
+      if (navBtn) navBtn.classList.add('active');
+    }
+
+    // ---------- face models ----------
     async function loadModels() {
       if (modelsLoaded) return true;
       try {
@@ -415,22 +429,22 @@
         return true;
       } catch (e) {
         console.error(e);
-        alert('โหลดโมเดลใบหน้าไม่สำเร็จ กรุณาเชื่อมต่ออินเทอร์เน็ตแล้วรีเฟรชหน้า');
+        alert('โหลดโมเดลใบหน้าไม่สำเร็จ ต้องมีอินเทอร์เน็ต');
         return false;
       }
     }
 
-    // ========== Register ==========
+    // ---------- register ----------
     async function startRegisterCamera() {
       const ok = await loadModels();
       if (!ok) return;
       try {
         regStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
         document.getElementById('registerVideo').srcObject = regStream;
-        document.getElementById('regStatus').textContent = 'กล้องพร้อมแล้ว กด "ถ่ายและบันทึก" เมื่อใบหน้าอยู่ในกรอบ';
+        document.getElementById('regStatus').textContent = 'กล้องพร้อม — กดถ่ายและบันทึก';
         document.getElementById('regStatus').className = 'text-sm status-ok';
       } catch (e) {
-        document.getElementById('regStatus').textContent = 'ไม่สามารถเปิดกล้องได้: ' + e.message;
+        document.getElementById('regStatus').textContent = 'เปิดกล้องไม่ได้: ' + e.message;
         document.getElementById('regStatus').className = 'text-sm status-error';
       }
     }
@@ -441,153 +455,148 @@
         document.getElementById('registerVideo').srcObject = null;
       }
     }
+
+    async function saveStudentToCloud(name, id, cls, descriptor) {
+      if (!requireFirebase()) return false;
+      const existing = students.find(s => s.name === name);
+      const payload = {
+        name,
+        id: id || '-',
+        class: cls,
+        descriptor: Array.from(descriptor),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+      if (existing && existing.docId) {
+        await db.collection('students').doc(existing.docId).set(payload, { merge: true });
+      } else {
+        await db.collection('students').add(payload);
+      }
+      return true;
+    }
+
     async function captureFace() {
+      if (!requireFirebase()) return;
       const name = document.getElementById('regName').value.trim();
       const id = document.getElementById('regId').value.trim();
       const cls = document.getElementById('regClass').value;
-      if (!name) {
-        alert('กรุณากรอกชื่อ-นามสกุล');
-        return;
-      }
-      if (!regStream) {
-        alert('กรุณาเปิดกล้องก่อน');
-        return;
-      }
+      if (!name) { alert('กรุณากรอกชื่อ'); return; }
+      if (!regStream) { alert('กรุณาเปิดกล้องก่อน'); return; }
+
       const video = document.getElementById('registerVideo');
       const canvas = document.getElementById('registerCanvas');
       const ctx = canvas.getContext('2d');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       ctx.drawImage(video, 0, 0);
+
       const detection = await faceapi.detectSingleFace(canvas).withFaceLandmarks().withFaceDescriptor();
       if (!detection) {
-        document.getElementById('regStatus').textContent = 'ไม่พบใบหน้า กรุณาลองใหม่';
+        document.getElementById('regStatus').textContent = 'ไม่พบใบหน้า';
         document.getElementById('regStatus').className = 'text-sm status-error';
         return;
       }
-      // check duplicate name
+
       if (students.some(s => s.name === name)) {
-        if (!confirm('มีชื่อนี้แล้ว ต้องการอัปเดตใบหน้าหรือไม่?')) return;
-        students = students.filter(s => s.name !== name);
+        if (!confirm('มีชื่อนี้แล้ว ต้องการอัปเดตหรือไม่?')) return;
       }
-      students.push({
-        name,
-        id: id || '-',
-        class: cls,
-        descriptor: Array.from(detection.descriptor)
-      });
-      saveStudents();
-      document.getElementById('regStatus').textContent = '✅ บันทึก ' + name + ' สำเร็จ';
-      document.getElementById('regStatus').className = 'text-sm status-ok';
-      document.getElementById('regName').value = '';
-      document.getElementById('regId').value = '';
+
+      document.getElementById('regStatus').textContent = 'กำลังบันทึกขึ้น Cloud...';
+      try {
+        await saveStudentToCloud(name, id, cls, detection.descriptor);
+        try {
+          const blob = await canvasToBlob(canvas);
+          downloadBlob(blob, 'face_' + (id || name).replace(/\s+/g, '_') + '.jpg');
+        } catch (_) {}
+        document.getElementById('regStatus').textContent = '✅ บันทึก ' + name + ' ขึ้น Cloud แล้ว';
+        document.getElementById('regStatus').className = 'text-sm status-ok';
+        document.getElementById('regName').value = '';
+        document.getElementById('regId').value = '';
+      } catch (e) {
+        console.error(e);
+        document.getElementById('regStatus').textContent = 'บันทึกไม่สำเร็จ: ' + e.message;
+        document.getElementById('regStatus').className = 'text-sm status-error';
+      }
     }
 
-    // อัปโหลดรูปภาพแล้วลงทะเบียน
     async function registerFromImage() {
+      if (!requireFirebase()) return;
       const name = document.getElementById('regName').value.trim();
       const id = document.getElementById('regId').value.trim();
       const cls = document.getElementById('regClass').value;
       const fileInput = document.getElementById('imageUpload');
-      if (!name) {
-        alert('กรุณากรอกชื่อ-นามสกุล');
-        return;
-      }
-      if (!fileInput.files || !fileInput.files[0]) {
-        alert('กรุณาเลือกไฟล์รูปภาพก่อน');
-        return;
-      }
-      const ok = await loadModels();
-      if (!ok) return;
+      if (!name) { alert('กรุณากรอกชื่อ'); return; }
+      if (!fileInput.files || !fileInput.files[0]) { alert('เลือกไฟล์รูปก่อน'); return; }
+      if (!(await loadModels())) return;
 
-      document.getElementById('regStatus').textContent = 'กำลังวิเคราะห์ใบหน้าจากรูปภาพ...';
-      document.getElementById('regStatus').className = 'text-sm status-warn';
-
+      document.getElementById('regStatus').textContent = 'กำลังวิเคราะห์รูป...';
       const file = fileInput.files[0];
       const img = await faceapi.bufferToImage(file);
-      // แสดงตัวอย่างรูป
-      const preview = document.getElementById('previewImage');
-      preview.src = img.src;
-      preview.classList.remove('hidden');
+      document.getElementById('previewImage').src = img.src;
+      document.getElementById('previewImage').classList.remove('hidden');
 
       const detection = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor();
       if (!detection) {
-        document.getElementById('regStatus').textContent = 'ไม่พบใบหน้าในรูปภาพ กรุณาเลือกรูปที่เห็นใบหน้าชัดเจน';
+        document.getElementById('regStatus').textContent = 'ไม่พบใบหน้าในรูป';
         document.getElementById('regStatus').className = 'text-sm status-error';
         return;
       }
-
       if (students.some(s => s.name === name)) {
-        if (!confirm('มีชื่อนี้แล้ว ต้องการอัปเดตใบหน้าหรือไม่?')) return;
-        students = students.filter(s => s.name !== name);
+        if (!confirm('มีชื่อนี้แล้ว ต้องการอัปเดตหรือไม่?')) return;
       }
-      students.push({
-        name,
-        id: id || '-',
-        class: cls,
-        descriptor: Array.from(detection.descriptor)
-      });
-      saveStudents();
-      document.getElementById('regStatus').textContent = '✅ บันทึก ' + name + ' จากรูปภาพสำเร็จ';
-      document.getElementById('regStatus').className = 'text-sm status-ok';
-      document.getElementById('regName').value = '';
-      document.getElementById('regId').value = '';
-      fileInput.value = '';
+      try {
+        await saveStudentToCloud(name, id, cls, detection.descriptor);
+        downloadBlob(file, 'face_' + (id || name).replace(/\s+/g, '_') + '.jpg');
+        document.getElementById('regStatus').textContent = '✅ บันทึก ' + name + ' ขึ้น Cloud แล้ว';
+        document.getElementById('regStatus').className = 'text-sm status-ok';
+        document.getElementById('regName').value = '';
+        document.getElementById('regId').value = '';
+        fileInput.value = '';
+      } catch (e) {
+        document.getElementById('regStatus').textContent = 'บันทึกไม่สำเร็จ: ' + e.message;
+        document.getElementById('regStatus').className = 'text-sm status-error';
+      }
     }
-
-    // แสดงตัวอย่างรูปเมื่อเลือกไฟล์
-    document.getElementById('imageUpload').addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      const preview = document.getElementById('previewImage');
-      if (file) {
-        preview.src = URL.createObjectURL(file);
-        preview.classList.remove('hidden');
-      } else {
-        preview.classList.add('hidden');
-      }
-    });
 
     function renderStudentList() {
       const el = document.getElementById('studentList');
       if (!students.length) {
-        el.innerHTML = '<p class="text-slate-400">ยังไม่มีนักเรียนในระบบ</p>';
+        el.innerHTML = '<p class="text-slate-400">ยังไม่มีนักเรียน</p>';
         return;
       }
-      el.innerHTML = students.map((s, i) =>
+      el.innerHTML = students.map(s =>
         `<div class="flex justify-between items-center py-1 border-b border-slate-100">
           <span>${s.name} <span class="text-slate-400">(${s.id}) · ${s.class}</span></span>
-          <button onclick="deleteStudent(${i})" class="text-red-500 text-xs hover:underline">ลบ</button>
+          <button onclick="deleteStudent('${s.docId}')" class="text-red-500 text-xs hover:underline">ลบ</button>
         </div>`
       ).join('');
     }
-    function deleteStudent(i) {
-      if (confirm('ลบ ' + students[i].name + ' ออกจากระบบ?')) {
-        students.splice(i, 1);
-        saveStudents();
-      }
+
+    async function deleteStudent(docId) {
+      if (!requireFirebase()) return;
+      if (!confirm('ลบนักเรียนคนนี้ออกจากระบบ?')) return;
+      await db.collection('students').doc(docId).delete();
     }
 
-    // ========== Attendance ==========
+    // ---------- attendance scan ----------
     async function startAttendance() {
-      const ok = await loadModels();
-      if (!ok) return;
+      if (!requireFirebase()) return;
+      if (!(await loadModels())) return;
       if (!students.length) {
         alert('ยังไม่มีนักเรียนในระบบ กรุณาลงทะเบียนก่อน');
         return;
       }
       try {
         attStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
-        const video = document.getElementById('video');
-        video.srcObject = attStream;
-        document.getElementById('attStatus').textContent = 'กำลังสแกน... หันหน้าเข้าหากล้อง';
+        document.getElementById('video').srcObject = attStream;
+        document.getElementById('attStatus').textContent = 'กำลังสแกน...';
         document.getElementById('attStatus').className = 'mt-3 text-sm status-ok';
-        // start detection loop
         detectionInterval = setInterval(detectAndMark, 800);
       } catch (e) {
         document.getElementById('attStatus').textContent = 'เปิดกล้องไม่ได้: ' + e.message;
         document.getElementById('attStatus').className = 'mt-3 text-sm status-error';
       }
     }
+
     function stopAttendance() {
       if (detectionInterval) {
         clearInterval(detectionInterval);
@@ -598,33 +607,29 @@
         attStream = null;
         document.getElementById('video').srcObject = null;
       }
-      document.getElementById('attStatus').textContent = 'หยุดสแกนแล้ว';
-      document.getElementById('attStatus').className = 'mt-3 text-sm text-slate-500';
     }
+
     async function detectAndMark() {
-      if (isWaitingConfirm) return; // กำลังรอผู้ใช้กดบันทึก
+      if (isWaitingConfirm) return;
       const video = document.getElementById('video');
       if (!video.srcObject || video.readyState < 2) return;
       const detection = await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor();
       if (!detection) return;
-      let best = null;
-      let bestDist = 1;
+
+      let best = null, bestDist = 1;
       for (const s of students) {
+        if (!s.descriptor) continue;
         const dist = faceapi.euclideanDistance(detection.descriptor, new Float32Array(s.descriptor));
-        if (dist < bestDist) {
-          bestDist = dist;
-          best = s;
-        }
+        if (dist < bestDist) { bestDist = dist; best = s; }
       }
       if (best && bestDist < MATCH_THRESHOLD) {
         showScanResult(best);
       }
     }
 
-    function showScanResult(student) {
+    async function showScanResult(student) {
       const date = todayStr();
       const type = scanMode;
-      // กันซ้ำประเภทเดียวกันในวันเดียวกัน
       const already = attendance.find(a => a.name === student.name && a.date === date && a.type === type);
       if (already) {
         document.getElementById('attStatus').textContent = student.name + ' สแกน' + (type === 'in' ? 'เข้า' : 'ออก') + 'ไปแล้ววันนี้';
@@ -632,16 +637,37 @@
         return;
       }
 
+      // สแกนเข้า: บันทึกอัตโนมัติขึ้น Cloud
+      if (type === 'in') {
+        try {
+          await db.collection('attendance').add({
+            name: student.name,
+            id: student.id || '-',
+            class: student.class || '-',
+            date,
+            time: timeStr(),
+            type: 'in',
+            note: '',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          document.getElementById('attStatus').textContent = '✅ เข้าแล้ว: ' + student.name;
+          document.getElementById('attStatus').className = 'mt-3 text-sm status-ok';
+        } catch (e) {
+          document.getElementById('attStatus').textContent = 'บันทึกไม่สำเร็จ: ' + e.message;
+          document.getElementById('attStatus').className = 'mt-3 text-sm status-error';
+        }
+        return;
+      }
+
+      // สแกนออก: โชว์ UI + หมายเหตุ
       isWaitingConfirm = true;
       pendingStudent = student;
-      stopAttendance(); // หยุดกล้องชั่วคราว
-
+      stopAttendance();
       document.getElementById('scanPanel').classList.add('hidden');
       document.getElementById('resultPanel').classList.remove('hidden');
-
-      document.getElementById('resultIcon').textContent = type === 'in' ? '📥' : '📤';
+      document.getElementById('resultIcon').textContent = '📤';
       document.getElementById('resultTitle').textContent = 'พบ: ' + student.name;
-      document.getElementById('resultTypeLabel').textContent = type === 'in' ? 'ประเภท: สแกนเข้า' : 'ประเภท: สแกนออก';
+      document.getElementById('resultTypeLabel').textContent = 'ประเภท: สแกนออก';
       document.getElementById('resultName').textContent = student.name;
       document.getElementById('resultId').textContent = student.id || '-';
       document.getElementById('resultRoom').textContent = student.class || '-';
@@ -650,26 +676,29 @@
       document.getElementById('resultNote').value = '';
     }
 
-    function confirmScan() {
-      if (!pendingStudent) return;
+    async function confirmScan() {
+      if (!pendingStudent || !requireFirebase()) return;
       const note = (document.getElementById('resultNote').value || '').trim();
-      const type = scanMode;
-      attendance.push({
-        name: pendingStudent.name,
-        id: pendingStudent.id,
-        class: pendingStudent.class,
-        date: todayStr(),
-        time: document.getElementById('resultTime').textContent,
-        type: type,
-        note: note
-      });
-      saveAttendance();
-      pendingStudent = null;
-      isWaitingConfirm = false;
-      document.getElementById('resultPanel').classList.add('hidden');
-      document.getElementById('scanPanel').classList.remove('hidden');
-      document.getElementById('attStatus').textContent = '✅ บันทึก' + (type === 'in' ? 'เข้า' : 'ออก') + 'เรียบร้อย — กดเริ่มสแกนเพื่อคนถัดไป';
-      document.getElementById('attStatus').className = 'mt-3 text-sm status-ok';
+      try {
+        await db.collection('attendance').add({
+          name: pendingStudent.name,
+          id: pendingStudent.id || '-',
+          class: pendingStudent.class || '-',
+          date: todayStr(),
+          time: document.getElementById('resultTime').textContent,
+          type: 'out',
+          note,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        pendingStudent = null;
+        isWaitingConfirm = false;
+        document.getElementById('resultPanel').classList.add('hidden');
+        document.getElementById('scanPanel').classList.remove('hidden');
+        document.getElementById('attStatus').textContent = '✅ บันทึกออกเรียบร้อย — กดเริ่มสแกนเพื่อคนถัดไป';
+        document.getElementById('attStatus').className = 'mt-3 text-sm status-ok';
+      } catch (e) {
+        alert('บันทึกไม่สำเร็จ: ' + e.message);
+      }
     }
 
     function cancelScanResult() {
@@ -677,33 +706,32 @@
       isWaitingConfirm = false;
       document.getElementById('resultPanel').classList.add('hidden');
       document.getElementById('scanPanel').classList.remove('hidden');
-      document.getElementById('attStatus').textContent = 'ยกเลิกแล้ว — กดเริ่มสแกนใหม่ได้';
+      document.getElementById('attStatus').textContent = 'ยกเลิกแล้ว';
       document.getElementById('attStatus').className = 'mt-3 text-sm text-slate-500';
     }
 
     function renderTodayList() {
       const date = todayStr();
-      const list = attendance.filter(a => a.date === date).reverse();
+      const list = attendance.filter(a => a.date === date);
       const el = document.getElementById('todayList');
       if (!list.length) {
         el.innerHTML = '<p class="text-slate-400">ยังไม่มีรายการ</p>';
         return;
       }
       el.innerHTML = list.map(a => {
-        const typeLabel = a.type === 'out' ? 'ออก' : 'เข้า';
         const color = a.type === 'out' ? 'text-orange-600' : 'text-emerald-700';
+        const label = a.type === 'out' ? 'ออก' : 'เข้า';
         return `<div class="flex justify-between items-start bg-white rounded-lg px-3 py-2 shadow-sm gap-2">
           <div>
             <span class="font-medium ${color}">${a.type === 'out' ? '📤' : '📥'} ${a.name}</span>
-            <span class="text-xs text-slate-400 ml-1">(${typeLabel})</span>
+            <span class="text-xs text-slate-400 ml-1">(${label})</span>
             ${a.note ? `<div class="text-xs text-slate-500 mt-0.5">📝 ${a.note}</div>` : ''}
           </div>
-          <span class="text-slate-500 whitespace-nowrap">${a.time}</span>
+          <span class="text-slate-500 whitespace-nowrap">${a.time || ''}</span>
         </div>`;
       }).join('');
     }
 
-    // ========== History & Excel ==========
     function renderHistory() {
       const tbody = document.getElementById('historyTable');
       const empty = document.getElementById('historyEmpty');
@@ -713,42 +741,35 @@
         return;
       }
       empty.style.display = 'none';
-      // เก็บ index จริงไว้เพื่อลบได้ถูกต้อง
-      const sorted = attendance.map((a, i) => ({ ...a, _idx: i })).reverse();
-      tbody.innerHTML = sorted.map(a => {
+      tbody.innerHTML = attendance.map(a => {
         const typeLabel = a.type === 'out' ? 'ออก' : 'เข้า';
         const typeClass = a.type === 'out' ? 'text-orange-600' : 'text-emerald-700';
         return `<tr class="hover:bg-slate-50">
-          <td class="px-4 py-2">${a.name}</td>
-          <td class="px-4 py-2">${a.id}</td>
-          <td class="px-4 py-2">${a.class}</td>
-          <td class="px-4 py-2 font-medium ${typeClass}">${typeLabel}</td>
-          <td class="px-4 py-2">${a.date}</td>
-          <td class="px-4 py-2">${a.time}</td>
-          <td class="px-4 py-2 text-slate-600 max-w-[140px] truncate" title="${a.note || ''}">${a.note || '-'}</td>
-          <td class="px-4 py-2 text-center">
-            <button onclick="deleteAttendance(${a._idx})" class="text-red-500 hover:text-red-700 hover:underline text-xs font-medium">ลบ</button>
+          <td class="px-3 py-2">${a.name}</td>
+          <td class="px-3 py-2">${a.id || '-'}</td>
+          <td class="px-3 py-2">${a.class || '-'}</td>
+          <td class="px-3 py-2 font-medium ${typeClass}">${typeLabel}</td>
+          <td class="px-3 py-2">${a.date || ''}</td>
+          <td class="px-3 py-2">${a.time || ''}</td>
+          <td class="px-3 py-2 text-slate-600 max-w-[120px] truncate">${a.note || '-'}</td>
+          <td class="px-3 py-2 text-center">
+            <button onclick="deleteAttendance('${a.docId}')" class="text-red-500 text-xs hover:underline">ลบ</button>
           </td>
         </tr>`;
       }).join('');
     }
 
-    function deleteAttendance(index) {
-      const item = attendance[index];
-      if (!item) return;
-      if (!confirm('ต้องการลบรายการของ "' + item.name + '" หรือไม่?')) return;
-      attendance.splice(index, 1);
-      saveAttendance();
-      renderHistory();
+    async function deleteAttendance(docId) {
+      if (!requireFirebase()) return;
+      if (!confirm('ลบรายการนี้?')) return;
+      await db.collection('attendance').doc(docId).delete();
     }
+
     function downloadExcel() {
-      if (!attendance.length) {
-        alert('ยังไม่มีข้อมูลให้ดาวน์โหลด');
-        return;
-      }
+      if (!attendance.length) { alert('ยังไม่มีข้อมูล'); return; }
       const data = attendance.map(a => ({
         'ชื่อ-นามสกุล': a.name,
-        'รหัสนักเรียน': a.id,
+        'รหัส': a.id,
         'ห้อง': a.class,
         'ประเภท': a.type === 'out' ? 'ออก' : 'เข้า',
         'วันที่': a.date,
@@ -761,77 +782,60 @@
       XLSX.writeFile(wb, 'attendance_' + todayStr() + '.xlsx');
     }
 
-    // ========== Dashboard ==========
     function updateDashboard() {
       const date = todayStr();
-      const presentToday = attendance.filter(a => a.date === date && a.type !== 'out');
-      // นับคนที่ไม่ซ้ำที่สแกนเข้าวันนี้
-      const presentNames = new Set(presentToday.map(a => a.name));
+      const presentNames = new Set(
+        attendance.filter(a => a.date === date && a.type !== 'out').map(a => a.name)
+      );
       const present = presentNames.size;
       const total = students.length;
       document.getElementById('statPresent').textContent = present;
       document.getElementById('statTotal').textContent = total;
       document.getElementById('statAbsent').textContent = Math.max(0, total - present);
 
-      // สรุปแยกตามห้อง
       const roomBox = document.getElementById('roomSummary');
       if (!students.length) {
-        roomBox.innerHTML = '<p class="text-slate-400 text-sm">ยังไม่มีนักเรียนในระบบ</p>';
+        roomBox.innerHTML = '<p class="text-slate-400 text-sm">ยังไม่มีนักเรียน</p>';
         return;
       }
-
-      // จัดกลุ่มนักเรียนตามห้อง
       const rooms = {};
-      for (let i = 1; i <= 18; i++) {
-        rooms['ห้อง ' + i] = [];
-      }
+      for (let i = 1; i <= 18; i++) rooms['ห้อง ' + i] = [];
       students.forEach(s => {
         const room = s.class || 'ห้อง 1';
         if (!rooms[room]) rooms[room] = [];
         rooms[room].push(s);
       });
-
-      // เรียงห้อง 1-18
-      const orderedRooms = Object.keys(rooms).sort((a, b) => {
-        const na = parseInt(a.replace('ห้อง ', '')) || 0;
-        const nb = parseInt(b.replace('ห้อง ', '')) || 0;
-        return na - nb;
-      });
-
       let html = '';
-      orderedRooms.forEach(room => {
+      Object.keys(rooms).sort((a, b) => {
+        return (parseInt(a.replace('ห้อง ', '')) || 0) - (parseInt(b.replace('ห้อง ', '')) || 0);
+      }).forEach(room => {
         const members = rooms[room];
-        if (!members.length) return; // ข้ามห้องที่ไม่มีคน
-
-        const presentNames = new Set(presentToday.filter(a => a.class === room).map(a => a.name));
+        if (!members.length) return;
         const presentCount = members.filter(m => presentNames.has(m.name)).length;
-
-        html += `
-          <div class="border border-slate-200 rounded-xl overflow-hidden">
-            <div class="bg-blue-50 px-4 py-2 flex justify-between items-center">
-              <span class="font-semibold text-blue-900">${room}</span>
-              <span class="text-sm text-slate-600">${presentCount}/${members.length} คน มาแล้ว</span>
-            </div>
-            <div class="p-3 grid grid-cols-1 sm:grid-cols-2 gap-1 text-sm">
-              ${members.map(m => {
-                const isPresent = presentNames.has(m.name);
-                return `<div class="flex items-center gap-2 px-2 py-1 rounded ${isPresent ? 'bg-emerald-50' : 'bg-slate-50'}">
-                  <span>${isPresent ? '✅' : '⬜'}</span>
-                  <span class="${isPresent ? 'text-emerald-800' : 'text-slate-600'}">${m.name}</span>
-                  <span class="text-slate-400 text-xs">(${m.id})</span>
-                </div>`;
-              }).join('')}
-            </div>
-          </div>`;
+        html += `<div class="border border-slate-200 rounded-xl overflow-hidden">
+          <div class="bg-blue-50 px-4 py-2 flex justify-between">
+            <span class="font-semibold text-blue-900">${room}</span>
+            <span class="text-sm text-slate-600">${presentCount}/${members.length} เข้าแล้ว</span>
+          </div>
+          <div class="p-3 grid grid-cols-1 sm:grid-cols-2 gap-1 text-sm">
+            ${members.map(m => {
+              const ok = presentNames.has(m.name);
+              return `<div class="flex items-center gap-2 px-2 py-1 rounded ${ok ? 'bg-emerald-50' : 'bg-slate-50'}">
+                <span>${ok ? '✅' : '⬜'}</span>
+                <span class="${ok ? 'text-emerald-800' : 'text-slate-600'}">${m.name}</span>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>`;
       });
-
       roomBox.innerHTML = html || '<p class="text-slate-400 text-sm">ยังไม่มีข้อมูล</p>';
     }
 
-    // Init
-    document.getElementById('todayDate').textContent = new Date().toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    renderStudentList();
-    updateDashboard();
+    // boot
+    initFirebase();
+    document.getElementById('todayDate').textContent = new Date().toLocaleDateString('th-TH', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
   </script>
 </body>
 </html>
